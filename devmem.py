@@ -80,6 +80,14 @@ class DevMemBuffer:
     def __str__(self):
         return self.hexdump()
 
+    def tofile(self, file):
+        d = self.data
+        with open(file, "wb") as f:
+            for word in d:
+                packed = struct.pack('I',(word))
+                f.write(packed)
+        return
+
 
 class DevMem:
     """Class to read and write data aligned to word boundaries of /dev/mem"""
@@ -214,6 +222,9 @@ def main():
     parser.add_option("-d", action="store_true", dest="debug",
             help="provide debugging information")
 
+    parser.add_option("-f", "--file", dest="file",
+            help="save read value to file")
+
     (options, args) = parser.parse_args()
 
     # Check for sane arguments
@@ -235,6 +246,16 @@ def main():
                                and options.word_size != 4):
         parser.print_help()
         print("\nError: Invalid word size specified")
+        return -1
+    
+    if options.file is not None and options.write is not None:
+        parser.print_help()
+        print("\nError: Both write and file are specified")
+        return -1
+    
+    if options.file is not None and options.read is None:
+        parser.print_help()
+        print("\nError: Specify read option")
         return -1
 
     # Only support writing one word at a time, force this
@@ -265,7 +286,10 @@ def main():
             print("Value after write:\t{0}".format(
                   mem.read(0x0, options.num).hexdump(options.word_size)))
     else:
-        print(mem.read(0x0, options.num).hexdump(options.word_size))
+        if options.file:
+            mem.read(0x0, options.num).tofile(options.file)
+        else:
+            print(mem.read(0x0, options.num).hexdump(options.word_size))
 
 
 if __name__ ==  '__main__':
