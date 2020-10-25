@@ -80,12 +80,11 @@ class DevMemBuffer:
     def __str__(self):
         return self.hexdump()
 
-    def tofile(self, file):
+    def tobinary(self):
         d = self.data
-        with open(file, "wb") as f:
-            for word in d:
-                packed = struct.pack('I',(word))
-                f.write(packed)
+        for word in d:
+            packed = struct.pack('I',(word))
+            sys.stdout.write(packed)
         return
 
 
@@ -222,8 +221,8 @@ def main():
     parser.add_option("-d", action="store_true", dest="debug",
             help="provide debugging information")
 
-    parser.add_option("-f", "--file", dest="file",
-            help="save read value to file")
+    parser.add_option("-b", "--binary", action="store_true", dest="binary",
+            help="convert to binary to stdout")
 
     (options, args) = parser.parse_args()
 
@@ -248,12 +247,12 @@ def main():
         print("\nError: Invalid word size specified")
         return -1
     
-    if options.file is not None and options.write is not None:
+    if options.binary and options.write is not None:
         parser.print_help()
-        print("\nError: Both write and file are specified")
+        print("\nError: Both write and binary are specified")
         return -1
     
-    if options.file is not None and options.read is None:
+    if options.binary and options.read is None:
         parser.print_help()
         print("\nError: Specify read option")
         return -1
@@ -286,8 +285,8 @@ def main():
             print("Value after write:\t{0}".format(
                   mem.read(0x0, options.num).hexdump(options.word_size)))
     else:
-        if options.file:
-            mem.read(0x0, options.num).tofile(options.file)
+        if options.binary:
+            mem.read(0x0, options.num).tobinary()
         else:
             print(mem.read(0x0, options.num).hexdump(options.word_size))
 
